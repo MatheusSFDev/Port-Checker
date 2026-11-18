@@ -1,13 +1,48 @@
 #by MatheusSFDev
+import socket, concurrent.futures
 
 program = True
 
 # * Program Functions
 def checkPorts(host):
-    pass
+    ports = []
+    
+    print("The Ports are being Checked, please wait...")
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1000) as exec:
+        futures = [exec.submit(checkPort, host, port) for port in range(1, 65535)]
+        for future in concurrent.futures.as_completed(futures):
+            if future.result():
+                ports.append(future.result())
+    
+    print(F"These are the Open Ports for '{host}':")
+    for port in ports:
+        print(F"[{port}]", end=" ")
+        
+    print("")
 
 def checkPort(host, port):
-    pass
+    conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    
+    conn.settimeout(0.5)
+    
+    success = True
+    
+    try:
+        conn.connect((host, port))
+        print(F"The Port [{port}] is Open")
+    except socket.timeout:
+        success = False
+    except ConnectionRefusedError:
+        success = False
+    except Exception as ex:
+        print("Unknown Error has Ocurred, Mode Details:")
+        print(ex)
+        success = False
+    finally:
+        conn.close()
+    
+    return port if success else False
 
 def validateHost(host):
     numbers = host.rsplit(".")
